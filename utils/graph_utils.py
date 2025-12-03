@@ -1,10 +1,8 @@
 import random
 import networkx as nx
 
-def get_edge_list(A):
-    edges = A.nonzero()
-    edges = edges.tolist()
-    return edges
+def get_edge_list(G):
+    return list(G.edges())
 
 def sample_negative_edges(G, num_samples):
     all_nodes = list(G.nodes())
@@ -15,7 +13,6 @@ def sample_negative_edges(G, num_samples):
         if u != v and not G.has_edge(u, v):
             negative_edges.add((u, v))
     return list(negative_edges)
-
 
 def rewire_edges(G, action):
     (u, v), (x, y), pattern = action

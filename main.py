@@ -1,43 +1,49 @@
 import torch
 from envs.graph_env import GraphEnv
-from models.gnn_encoder import GNNEncoder
-from models.policy import Policy
 from rl.reinforce import REINFORCE
 from rl.buffer import Buffer
+from models.policy import Policy   # TRANSFORMER POLICY
+
 
 def train():
-    n = 50
-    k = 4
-    T = 20
-    episodes = 5000
+    n = 50          # number of nodes
+    k = 4           # degree
+    T = 40          # steps per episode
+    episodes = 2000
 
     env = GraphEnv(n, k, T)
 
-    gnn = GNNEncoder(in_dim=1, hidden=64, out_dim=64)
-    policy = Policy(gnn, hidden_dim=64)
+    policy = Policy(hidden_dim=128)
 
-    agent = REINFORCE(policy, lr=1e-4, gamma=1.0)
+    agent = REINFORCE(policy, lr=3e-5, gamma=1.0)
 
     for ep in range(episodes):
         buffer = Buffer()
-        A = env.reset()
+        G = env.reset()
 
         done = False
-        while not done:
-            action, logp_sum = policy.sample_action(A)
-            A2, reward, done = env.step(action)
+        total_reward = 0
 
-            buffer.states.append(A2)
+        while not done:
+            # Sample action from Transformer policy
+            action, logp = policy.sample_action(G)
+
+            # Environment step
+            G_next, reward, done = env.step(action)
+
+            buffer.states.append(G_next)
             buffer.actions.append(action)
-            buffer.logprobs.append(logp_sum)
+            buffer.logprobs.append(logp)
             buffer.rewards.append(reward)
 
-            A = A2
+            total_reward += reward
+            G = G_next
 
         agent.update(buffer)
 
-        if ep % 50 == 0:
-            print(f"Episode {ep} | Reward = {reward:.4f}")
+        if ep % 20 == 0:
+            print(f"Episode {ep} | Reward = {total_reward:.4f}")
+
 
 if __name__ == "__main__":
     train()
